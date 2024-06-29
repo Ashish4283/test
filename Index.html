@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Vertex AI Data Fetcher</title>
+  <script src="https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/your_script.js"></script>
+  <script>
+    function fetchData() {
+      google.script.run.withSuccessHandler(displayData).fetchDataFromVertexAI();
+    }
+
+    function displayData(data) {
+      var processedData = processFetchedData(data);
+      document.getElementById('output').innerText = JSON.stringify(processedData, null, 2);
+    }
+  </script>
+</head>
+
+<body>
+  <h1>Vertex AI Data Fetcher</h1>
+  <button onclick="fetchData()">Fetch Data</button>
+  <div id="output"></div>
+</body>
+
+</html>
