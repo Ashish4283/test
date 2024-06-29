@@ -1,12 +1,19 @@
+function fetchData() {
+  var imageUrl = document.getElementById('imageUrl').value;
+  if (!imageUrl) {
+    alert("Please enter a valid image URL.");
+    return;
+  }
+  google.script.run.withSuccessHandler(processFetchedData).extractTextFromImageUrl(imageUrl);
+}
+
 function processFetchedData(data) {
   try {
-    // Your processing logic here
     var parsedData = JSON.parse(data);
-    // Do something with parsedData
     console.log("Processed Data:", parsedData);
-    return parsedData;
+    document.getElementById('output').textContent = JSON.stringify(parsedData, null, 2);
   } catch (error) {
     console.error("Error processing data:", error);
-    return { error: error.toString() };
+    document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
   }
 }
