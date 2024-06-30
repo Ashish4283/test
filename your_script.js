@@ -10,6 +10,9 @@ function loadScript(url, callback) {
 loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.min.js", function() {
   console.log("fast-json-stable-stringify loaded");
 
+  // Ensure that fastJsonStableStringify is available in the global scope
+  const fastJsonStableStringify = window.stringify;
+
   function fetchData() {
     var imageUrl = document.getElementById('imageUrl').value;
     if (!imageUrl) {
