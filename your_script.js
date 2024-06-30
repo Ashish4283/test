@@ -30,7 +30,10 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         return;
       }
 
-      var parsedData = data;
+      // Clean the response
+      const cleanedResponse = data.candidates[0].content.parts[0].text.replace(/```json\n|```/g, '').trim();
+      const parsedData = JSON.parse(cleanedResponse);
+
       console.log("Processed Data:", parsedData);
       document.getElementById('output').textContent = JSON.stringify(parsedData, null, 2);
     } catch (error) {
