@@ -29,10 +29,10 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
 
       var parsedData = data;
       console.log("Processed Data:", parsedData);
-      document.getElementById('output').textContent = fastJsonStableStringify(parsedData, null, 2);
+      document.getElementById('output').textContent = JSON.stringify(parsedData, null, 2);
     } catch (error) {
       console.error("Error processing data:", error);
-      document.getElementById('output').textContent = fastJsonStableStringify({ error: error.toString() });
+      document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
     }
   }
 
