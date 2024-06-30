@@ -29,7 +29,18 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
 
       const rawText = data.candidates[0].content.parts[0].text;
       const cleanedResponse = rawText.replace(/```json\n|```/g, '').trim();
-      const parsedData = JSON.parse(cleanedResponse);
+
+      console.log("Cleaned Response:", cleanedResponse);
+
+      // Check if the cleaned response is valid JSON
+      let parsedData;
+      try {
+        parsedData = JSON.parse(cleanedResponse);
+      } catch (jsonError) {
+        console.error("Error parsing cleaned response:", jsonError);
+        document.getElementById('output').textContent = JSON.stringify({ error: 'Error parsing cleaned response', cleanedResponse: cleanedResponse });
+        return;
+      }
 
       // Format the data for Tabulator
       const formattedData = formatDataForTabulator(parsedData);
