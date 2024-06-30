@@ -1,4 +1,3 @@
-// Load fast-json-stable-stringify library
 function loadScript(url, callback) {
   var script = document.createElement("script");
   script.type = "text/javascript";
@@ -10,36 +9,25 @@ function loadScript(url, callback) {
 loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.js", function () {
   console.log("fast-json-stable-stringify loaded");
 
-  // Ensure that fastJsonStableStringify is available in the global scope
-  const fastJsonStableStringify = window.stringify || window.fastJsonStableStringify;
-
-  function fetchData() {
+  function fetchBase64() {
     var imageUrl = document.getElementById('imageUrl').value;
     if (!imageUrl) {
       alert("Please enter a valid image URL.");
       return;
     }
 
-    // Check if running in Google Apps Script environment
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.withSuccessHandler(processFetchedData).extractTextFromImageUrl(imageUrl);
-    } else {
-      // Fetch data from Google Apps Script web URL
-      console.log("Fetching data from Google Apps Script...");
-      fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ imageUrl: imageUrl })
-      })
-      .then(response => response.json())
-      .then(data => processFetchedData(data))
-      .catch(error => {
-        console.error("Error fetching data from Google Apps Script:", error);
-        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
-      });
-    }
+    google.script.run.withSuccessHandler(function(response) {
+      if (response.error) {
+        console.error("Error fetching Base64 image:", response.error);
+        document.getElementById('output').textContent = JSON.stringify({ error: response.error }, null, 2);
+      } else {
+        extractTextFromBase64Image(response.base64);
+      }
+    }).getBase64FromImageUrl(imageUrl);
+  }
+
+  function extractTextFromBase64Image(base64Image) {
+    google.script.run.withSuccessHandler(processFetchedData).extractTextFromBase64Image(base64Image);
   }
 
   function processFetchedData(data) {
@@ -63,7 +51,6 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
   }
 
   function displayData(data) {
-    // Preprocess data to clear specific columns when Type is "Category"
     data.forEach(row => {
       if (row.Type === "Category") {
         row.Level = "";
@@ -73,10 +60,10 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
     });
 
     var table = new Tabulator("#output", {
-      height: "100%",  // Adjust height to ensure no pagination
+      height: "100%",
       data: data,
       layout: "fitColumns",
-      pagination: false, // Disable pagination
+      pagination: false,
       columns: [
         {
           title: "Type",
@@ -123,20 +110,19 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       ],
     });
 
-    // Ensure the copy buttons are added only once
     if (!document.getElementById("copyButtons")) {
       var copyButtonsDiv = document.createElement("div");
       copyButtonsDiv.id = "copyButtons";
 
       var copyHeaderButton = document.createElement("button");
       copyHeaderButton.innerText = "Copy Headers";
-      copyHeaderButton.onclick = function() {
+      copyHeaderButton.onclick = function () {
         copyTableHeaders(table);
       };
 
       var copyDataButton = document.createElement("button");
       copyDataButton.innerText = "Copy Data";
-      copyDataButton.onclick = function() {
+      copyDataButton.onclick = function () {
         copyTableData(table);
       };
 
@@ -151,9 +137,9 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
     var headers = columns.map(col => col.getField());
     var csvContent = headers.join("\t") + "\n";
 
-    navigator.clipboard.writeText(csvContent).then(function() {
+    navigator.clipboard.writeText(csvContent).then(function () {
       alert("Table headers copied to clipboard");
-    }, function(err) {
+    }, function (err) {
       console.error("Could not copy text: ", err);
     });
   }
@@ -169,13 +155,12 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       csvContent += rowArray.join("\t") + "\n";
     });
 
-    navigator.clipboard.writeText(csvContent).then(function() {
+    navigator.clipboard.writeText(csvContent).then(function () {
       alert("Table data copied to clipboard");
-    }, function(err) {
+    }, function (err) {
       console.error("Could not copy text: ", err);
     });
   }
 
-  // Expose fetchData to the global scope
-  window.fetchData = fetchData;
+  window.fetchBase64 = fetchBase64;
 });
