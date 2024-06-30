@@ -3,81 +3,17 @@
 
 <head>
   <title>Vertex AI Data Fetcher</title>
+  <link href="https://unpkg.com/tabulator-tables@4.9.3/dist/css/tabulator.min.css" rel="stylesheet">
+  <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.min.js"></script>
 </head>
 
 <body>
   <h1>Vertex AI Data Fetcher</h1>
-  <label for="imageFile">Upload Image:</label>
-  <input type="file" id="imageFile" accept="image/*">
-  <button id="fetchButton">Fetch Data</button>
-  <canvas id="imageCanvas" style="border:1px solid #000;"></canvas>
+  <label for="imageUrl">Image URL:</label>
+  <input type="text" id="imageUrl" placeholder="Enter image URL here">
+  <button onclick="fetchData()">Fetch Data</button>
   <div id="output"></div>
-  <script>
-    document.getElementById('fetchButton').addEventListener('click', () => {
-      const fileInput = document.getElementById('imageFile');
-      const file = fileInput.files[0];
-      if (file) {
-        convertFileToBase64(file)
-          .then(base64Image => fetchVertexAIData(base64Image))
-          .catch(error => console.error('Error converting file to base64:', error));
-      } else {
-        alert('Please select an image file.');
-      }
-    });
-
-    function convertFileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]); // Remove the data URL part
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function fetchVertexAIData(base64Image) {
-      console.log("Sending base64 image data to Vertex AI");
-
-      fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({ base64Image })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            document.getElementById('output').textContent = JSON.stringify(data.error);
-            return;
-          }
-          const table = createTable(data);
-          document.getElementById('output').innerHTML = '';
-          document.getElementById('output').appendChild(table);
-        })
-        .catch(error => {
-          console.error('Error fetching data:', error);
-          document.getElementById('output').textContent = JSON.stringify({ error: 'Failed to fetch' });
-        });
-    }
-
-    function createTable(data) {
-      const table = document.createElement('table');
-      const header = table.insertRow();
-      const columns = ["Type", "Item Name", "Description", "Price", "Minimum Option Selections", "Maximum Option Selections", "Number of Free Options", "Level", "Is Alcohol", "Is Bike Friendly"];
-      columns.forEach(col => {
-        const cell = header.insertCell();
-        cell.textContent = col;
-      });
-      data.forEach(item => {
-        const row = table.insertRow();
-        columns.forEach(col => {
-          const cell = row.insertCell();
-          cell.textContent = item[col];
-        });
-      });
-      return table;
-    }
-  </script>
+  <script src="your_script.js"></script>
 </body>
 
 </html>
