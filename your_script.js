@@ -10,9 +10,6 @@ function loadScript(url, callback) {
 loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.min.js", function() {
   console.log("fast-json-stable-stringify loaded");
 
-  // Ensure that fastJsonStableStringify is available in the global scope
-  const fastJsonStableStringify = window.stringify;
-
   function fetchData() {
     var imageUrl = document.getElementById('imageUrl').value;
     if (!imageUrl) {
@@ -30,13 +27,34 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         return;
       }
 
-      var parsedData = data;
-      console.log("Processed Data:", parsedData);
-      document.getElementById('output').textContent = JSON.stringify(parsedData, null, 2);
+      const rawText = data.candidates[0].content.parts[0].text;
+      const cleanedResponse = rawText.replace(/```json\n|```/g, '').trim();
+      const parsedData = JSON.parse(cleanedResponse);
+
+      // Format the data for Tabulator
+      const formattedData = formatDataForTabulator(parsedData);
+
+      console.log("Processed Data:", formattedData);
+      document.getElementById('output').textContent = JSON.stringify(formattedData, null, 2);
     } catch (error) {
       console.error("Error processing data:", error);
       document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
     }
+  }
+
+  function formatDataForTabulator(data) {
+    return data.map(item => ({
+      Type: item.Type,
+      "Item Name": item["Item Name"],
+      Description: item.Description,
+      Price: item.Price,
+      "Minimum Option Selections": item["Minimum Option Selections"],
+      "Maximum Option Selections": item["Maximum Option Selections"],
+      "Number of Free Options": item["Number of Free Options"],
+      Level: item.Level,
+      "Is Alcohol": item["Is Alcohol"],
+      "Is Bike Friendly": item["Is Bike Friendly"]
+    }));
   }
 
   // Expose fetchData to the global scope
