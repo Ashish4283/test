@@ -27,8 +27,8 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         return;
       }
 
-      // Clean the response
-      const cleanedResponse = data.candidates[0].content.parts[0].text.replace(/```json\n|```/g, '').trim();
+      const rawText = data.candidates[0].content.parts[0].text;
+      const cleanedResponse = rawText.replace(/```json\n|```/g, '').trim();
       const parsedData = JSON.parse(cleanedResponse);
 
       // Format the data for Tabulator
