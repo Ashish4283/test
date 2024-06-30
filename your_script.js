@@ -16,14 +16,11 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       return;
     }
 
-    // Check if running in Google Apps Script environment
     if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.withSuccessHandler(function(base64) {
+      google.script.run.withSuccessHandler(function (base64) {
         extractTextFromBase64Image(base64);
       }).convertImageUrlToBase64(imageUrl);
     } else {
-      // Fetch data from Google Apps Script proxy endpoint
-      console.log("Fetching data from Google Apps Script proxy...");
       fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec?imageUrl=' + encodeURIComponent(imageUrl))
         .then(response => response.json())
         .then(data => {
@@ -49,12 +46,12 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       },
       body: JSON.stringify({ base64Image: base64Image })
     })
-    .then(response => response.json())
-    .then(data => processFetchedData(data))
-    .catch(error => {
-      console.error("Error fetching data from Google Apps Script:", error);
-      document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
-    });
+      .then(response => response.json())
+      .then(data => processFetchedData(data))
+      .catch(error => {
+        console.error("Error fetching data from Google Apps Script:", error);
+        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
+      });
   }
 
   function processFetchedData(data) {
@@ -92,7 +89,18 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       layout: "fitColumns",
       pagination: false,
       columns: [
-        { title: "Type", field: "Type", editor: "select", editorParams: { values: ["Category", "Item Name", "Addons", "Top-ups", "Option"] }, cellEdited: function (cell) { if (cell.getValue() === "Category") { cell.getRow().update({ "Level": "", "Is Alcohol": "", "Is Bike Friendly": "" }); } } },
+        { title: "Type", field: "Type", editor: "select", editorParams: { values: ["Category", "Item Name", "Addons", "Top-ups", "Option"] }, cellEdited: function (cell) {
+            var row = cell.getRow();
+            var rowData = row.getData();
+            if (cell.getValue() === "Category") {
+              row.update({
+                "Level": "",
+                "Is Alcohol": "",
+                "Is Bike Friendly": ""
+              });
+            }
+          }
+        },
         { title: "Item Name", field: "Item Name", editor: "input" },
         { title: "Description", field: "Description", editor: "input" },
         { title: "Price", field: "Price", editor: "input" },
@@ -101,7 +109,7 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         { title: "Number of Free Options", field: "Number of Free Options", editor: "input" },
         { title: "Level", field: "Level", editor: "input" },
         { title: "Is Alcohol", field: "Is Alcohol", editor: "select", editorParams: { values: ["true", "false"] } },
-        { title: "Is Bike Friendly", field: "Is Bike Friendly", editor: "select", editorParams: { values: ["true", "false"] } },
+        { title: "Is Bike Friendly", field: "Is Bike Friendly", editor: "select", editorParams: { values: ["true", "false"] } }
       ],
     });
 
@@ -111,11 +119,15 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
 
       var copyHeaderButton = document.createElement("button");
       copyHeaderButton.innerText = "Copy Headers";
-      copyHeaderButton.onclick = function () { copyTableHeaders(table); };
+      copyHeaderButton.onclick = function() {
+        copyTableHeaders(table);
+      };
 
       var copyDataButton = document.createElement("button");
       copyDataButton.innerText = "Copy Data";
-      copyDataButton.onclick = function () { copyTableData(table); };
+      copyDataButton.onclick = function() {
+        copyTableData(table);
+      };
 
       copyButtonsDiv.appendChild(copyHeaderButton);
       copyButtonsDiv.appendChild(copyDataButton);
@@ -128,9 +140,9 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
     var headers = columns.map(col => col.getField());
     var csvContent = headers.join("\t") + "\n";
 
-    navigator.clipboard.writeText(csvContent).then(function () {
+    navigator.clipboard.writeText(csvContent).then(function() {
       alert("Table headers copied to clipboard");
-    }, function (err) {
+    }, function(err) {
       console.error("Could not copy text: ", err);
     });
   }
@@ -146,9 +158,9 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       csvContent += rowArray.join("\t") + "\n";
     });
 
-    navigator.clipboard.writeText(csvContent).then(function () {
+    navigator.clipboard.writeText(csvContent).then(function() {
       alert("Table data copied to clipboard");
-    }, function (err) {
+    }, function(err) {
       console.error("Could not copy text: ", err);
     });
   }
