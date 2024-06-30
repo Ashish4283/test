@@ -16,18 +16,36 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       return;
     }
 
-    google.script.run.withSuccessHandler(function(response) {
-      if (response.error) {
-        console.error("Error fetching Base64 image:", response.error);
-        document.getElementById('output').textContent = JSON.stringify({ error: response.error }, null, 2);
-      } else {
-        extractTextFromBase64Image(response.base64);
-      }
-    }).getBase64FromImageUrl(imageUrl);
+    fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec?imageUrl=' + encodeURIComponent(imageUrl))
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error("Error fetching Base64 image:", data.error);
+          document.getElementById('output').textContent = JSON.stringify({ error: data.error }, null, 2);
+        } else {
+          extractTextFromBase64Image(data.base64);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching data from Google Apps Script:", error);
+        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
+      });
   }
 
   function extractTextFromBase64Image(base64Image) {
-    google.script.run.withSuccessHandler(processFetchedData).extractTextFromBase64Image(base64Image);
+    fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ base64Image: base64Image })
+    })
+    .then(response => response.json())
+    .then(data => processFetchedData(data))
+    .catch(error => {
+      console.error("Error fetching data from Google Apps Script:", error);
+      document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
+    });
   }
 
   function processFetchedData(data) {
@@ -65,25 +83,7 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       layout: "fitColumns",
       pagination: false,
       columns: [
-        {
-          title: "Type",
-          field: "Type",
-          editor: "select",
-          editorParams: {
-            values: ["Category", "Item Name", "Addons", "Top-ups", "Option"]
-          },
-          cellEdited: function (cell) {
-            var row = cell.getRow();
-            var rowData = row.getData();
-            if (cell.getValue() === "Category") {
-              row.update({
-                "Level": "",
-                "Is Alcohol": "",
-                "Is Bike Friendly": ""
-              });
-            }
-          }
-        },
+        { title: "Type", field: "Type", editor: "select", editorParams: { values: ["Category", "Item Name", "Addons", "Top-ups", "Option"] }, cellEdited: function (cell) { if (cell.getValue() === "Category") { cell.getRow().update({ "Level": "", "Is Alcohol": "", "Is Bike Friendly": "" }); } } },
         { title: "Item Name", field: "Item Name", editor: "input" },
         { title: "Description", field: "Description", editor: "input" },
         { title: "Price", field: "Price", editor: "input" },
@@ -91,22 +91,8 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         { title: "Maximum Option Selections", field: "Maximum Option Selections", editor: "input" },
         { title: "Number of Free Options", field: "Number of Free Options", editor: "input" },
         { title: "Level", field: "Level", editor: "input" },
-        {
-          title: "Is Alcohol",
-          field: "Is Alcohol",
-          editor: "select",
-          editorParams: {
-            values: ["true", "false"]
-          }
-        },
-        {
-          title: "Is Bike Friendly",
-          field: "Is Bike Friendly",
-          editor: "select",
-          editorParams: {
-            values: ["true", "false"]
-          }
-        },
+        { title: "Is Alcohol", field: "Is Alcohol", editor: "select", editorParams: { values: ["true", "false"] } },
+        { title: "Is Bike Friendly", field: "Is Bike Friendly", editor: "select", editorParams: { values: ["true", "false"] } },
       ],
     });
 
@@ -116,15 +102,11 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
 
       var copyHeaderButton = document.createElement("button");
       copyHeaderButton.innerText = "Copy Headers";
-      copyHeaderButton.onclick = function () {
-        copyTableHeaders(table);
-      };
+      copyHeaderButton.onclick = function () { copyTableHeaders(table); };
 
       var copyDataButton = document.createElement("button");
       copyDataButton.innerText = "Copy Data";
-      copyDataButton.onclick = function () {
-        copyTableData(table);
-      };
+      copyDataButton.onclick = function () { copyTableData(table); };
 
       copyButtonsDiv.appendChild(copyHeaderButton);
       copyButtonsDiv.appendChild(copyDataButton);
