@@ -7,7 +7,7 @@ function loadScript(url, callback) {
   document.head.appendChild(script);
 }
 
-loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.min.js", function() {
+loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.js", function () {
   console.log("fast-json-stable-stringify loaded");
 
   function fetchData() {
@@ -16,7 +16,27 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       alert("Please enter a valid image URL.");
       return;
     }
-    google.script.run.withSuccessHandler(processFetchedData).extractTextFromImageUrl(imageUrl);
+
+    // Check if running in Google Apps Script environment
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.withSuccessHandler(processFetchedData).extractTextFromImageUrl(imageUrl);
+    } else {
+      // Fetch data from Google Apps Script web URL
+      console.log("Fetching data from Google Apps Script...");
+      fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ imageUrl: imageUrl })
+      })
+      .then(response => response.json())
+      .then(data => processFetchedData(data))
+      .catch(error => {
+        console.error("Error fetching data from Google Apps Script:", error);
+        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
+      });
+    }
   }
 
   function processFetchedData(data) {
@@ -27,45 +47,130 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         return;
       }
 
-      const rawText = data.candidates[0].content.parts[0].text;
-      const cleanedResponse = rawText.replace(/```json\n|```/g, '').trim();
+      var rawJson = data.candidates[0].content.parts[0].text;
+      var cleanedJson = rawJson.replace(/```json\n/g, '').replace(/\n```/g, '');
+      var parsedData = JSON.parse(cleanedJson);
 
-      console.log("Cleaned Response:", cleanedResponse);
-
-      // Check if the cleaned response is valid JSON
-      let parsedData;
-      try {
-        parsedData = JSON.parse(cleanedResponse);
-      } catch (jsonError) {
-        console.error("Error parsing cleaned response:", jsonError);
-        document.getElementById('output').textContent = JSON.stringify({ error: 'Error parsing cleaned response', cleanedResponse: cleanedResponse });
-        return;
-      }
-
-      // Format the data for Tabulator
-      const formattedData = formatDataForTabulator(parsedData);
-
-      console.log("Processed Data:", formattedData);
-      document.getElementById('output').textContent = JSON.stringify(formattedData, null, 2);
+      console.log("Processed Data:", parsedData);
+      displayData(parsedData);
     } catch (error) {
       console.error("Error processing data:", error);
       document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
     }
   }
 
-  function formatDataForTabulator(data) {
-    return data.map(item => ({
-      Type: item.Type,
-      "Item Name": item["Item Name"],
-      Description: item.Description,
-      Price: item.Price,
-      "Minimum Option Selections": item["Minimum Option Selections"],
-      "Maximum Option Selections": item["Maximum Option Selections"],
-      "Number of Free Options": item["Number of Free Options"],
-      Level: item.Level,
-      "Is Alcohol": item["Is Alcohol"],
-      "Is Bike Friendly": item["Is Bike Friendly"]
-    }));
+  function displayData(data) {
+    // Preprocess data to clear specific columns when Type is "Category"
+    data.forEach(row => {
+      if (row.Type === "Category") {
+        row.Level = "";
+        row["Is Alcohol"] = "";
+        row["Is Bike Friendly"] = "";
+      }
+    });
+
+    var table = new Tabulator("#output", {
+      height: "100%",  // Adjust height to ensure no pagination
+      data: data,
+      layout: "fitColumns",
+      pagination: false, // Disable pagination
+      columns: [
+        {
+          title: "Type",
+          field: "Type",
+          editor: "select",
+          editorParams: {
+            values: ["Category", "Item Name", "Addons", "Top-ups", "Option"]
+          },
+          cellEdited: function (cell) {
+            var row = cell.getRow();
+            var rowData = row.getData();
+            if (cell.getValue() === "Category") {
+              row.update({
+                "Level": "",
+                "Is Alcohol": "",
+                "Is Bike Friendly": ""
+              });
+            }
+          }
+        },
+        { title: "Item Name", field: "Item Name", editor: "input" },
+        { title: "Description", field: "Description", editor: "input" },
+        { title: "Price", field: "Price", editor: "input" },
+        { title: "Minimum Option Selections", field: "Minimum Option Selections", editor: "input" },
+        { title: "Maximum Option Selections", field: "Maximum Option Selections", editor: "input" },
+        { title: "Number of Free Options", field: "Number of Free Options", editor: "input" },
+        { title: "Level", field: "Level", editor: "input" },
+        {
+          title: "Is Alcohol",
+          field: "Is Alcohol",
+          editor: "select",
+          editorParams: {
+            values: ["true", "false"]
+          }
+        },
+        {
+          title: "Is Bike Friendly",
+          field: "Is Bike Friendly",
+          editor: "select",
+          editorParams: {
+            values: ["true", "false"]
+          }
+        },
+      ],
+    });
+
+    // Ensure the copy buttons are added only once
+    if (!document.getElementById("copyButtons")) {
+      var copyButtonsDiv = document.createElement("div");
+      copyButtonsDiv.id = "copyButtons";
+
+      var copyHeaderButton = document.createElement("button");
+      copyHeaderButton.innerText = "Copy Headers";
+      copyHeaderButton.onclick = function() {
+        copyTableHeaders(table);
+      };
+
+      var copyDataButton = document.createElement("button");
+      copyDataButton.innerText = "Copy Data";
+      copyDataButton.onclick = function() {
+        copyTableData(table);
+      };
+
+      copyButtonsDiv.appendChild(copyHeaderButton);
+      copyButtonsDiv.appendChild(copyDataButton);
+      document.body.insertBefore(copyButtonsDiv, document.getElementById("output"));
+    }
+  }
+
+  function copyTableHeaders(table) {
+    var columns = table.getColumns();
+    var headers = columns.map(col => col.getField());
+    var csvContent = headers.join("\t") + "\n";
+
+    navigator.clipboard.writeText(csvContent).then(function() {
+      alert("Table headers copied to clipboard");
+    }, function(err) {
+      console.error("Could not copy text: ", err);
+    });
+  }
+
+  function copyTableData(table) {
+    var columns = table.getColumns();
+    var headers = columns.map(col => col.getField());
+    var rows = table.getData();
+    var csvContent = headers.join("\t") + "\n";
+
+    rows.forEach(row => {
+      var rowArray = headers.map(header => row[header]);
+      csvContent += rowArray.join("\t") + "\n";
+    });
+
+    navigator.clipboard.writeText(csvContent).then(function() {
+      alert("Table data copied to clipboard");
+    }, function(err) {
+      console.error("Could not copy text: ", err);
+    });
   }
 
   // Expose fetchData to the global scope
