@@ -16,26 +16,20 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       return;
     }
 
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.withSuccessHandler(function (base64) {
-        extractTextFromBase64Image(base64);
-      }).convertImageUrlToBase64(imageUrl);
-    } else {
-      fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec?imageUrl=' + encodeURIComponent(imageUrl))
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            console.error("Error fetching Base64 image:", data.error);
-            document.getElementById('output').textContent = JSON.stringify({ error: data.error }, null, 2);
-          } else {
-            extractTextFromBase64Image(data.base64);
-          }
-        })
-        .catch(error => {
-          console.error("Error fetching data from Google Apps Script proxy:", error);
-          document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
-        });
-    }
+    fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec?imageUrl=' + encodeURIComponent(imageUrl))
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error("Error fetching Base64 image:", data.error);
+          document.getElementById('output').textContent = JSON.stringify({ error: data.error }, null, 2);
+        } else {
+          extractTextFromBase64Image(data.base64);
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching data from Google Apps Script proxy:", error);
+        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
+      });
   }
 
   function extractTextFromBase64Image(base64Image) {
@@ -89,18 +83,7 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       layout: "fitColumns",
       pagination: false,
       columns: [
-        { title: "Type", field: "Type", editor: "select", editorParams: { values: ["Category", "Item Name", "Addons", "Top-ups", "Option"] }, cellEdited: function (cell) {
-            var row = cell.getRow();
-            var rowData = row.getData();
-            if (cell.getValue() === "Category") {
-              row.update({
-                "Level": "",
-                "Is Alcohol": "",
-                "Is Bike Friendly": ""
-              });
-            }
-          }
-        },
+        { title: "Type", field: "Type", editor: "select", editorParams: { values: ["Category", "Item Name", "Addons", "Top-ups", "Option"] } },
         { title: "Item Name", field: "Item Name", editor: "input" },
         { title: "Description", field: "Description", editor: "input" },
         { title: "Price", field: "Price", editor: "input" },
@@ -110,7 +93,7 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
         { title: "Level", field: "Level", editor: "input" },
         { title: "Is Alcohol", field: "Is Alcohol", editor: "select", editorParams: { values: ["true", "false"] } },
         { title: "Is Bike Friendly", field: "Is Bike Friendly", editor: "select", editorParams: { values: ["true", "false"] } }
-      ],
+      ]
     });
 
     if (!document.getElementById("copyButtons")) {
