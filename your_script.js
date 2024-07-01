@@ -16,35 +16,17 @@ loadScript("https://cdn.jsdelivr.net/npm/fast-json-stable-stringify@2.1.0/index.
       return;
     }
 
-    // Fetch the image as a Blob
-    fetch(imageUrl)
-      .then(response => response.blob())
-      .then(blob => {
-        var reader = new FileReader();
-        reader.onloadend = function () {
-          var base64Data = reader.result.split(',')[1]; // Extract base64 data without the prefix
-          extractTextFromBase64Image(base64Data);
-        };
-        reader.readAsDataURL(blob); // Convert Blob to base64
-      })
-      .catch(error => {
-        console.error("Error fetching image:", error);
-        document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
-      });
-  }
-
-  function extractTextFromBase64Image(base64Image) {
     fetch('https://script.google.com/macros/s/AKfycbxCwjo0lAyl2FLgWyA8nSl7hD_GRp5_fwdZ_VgKRNg2i3zzpyAl0fBHRSEGeLcARHg2/exec', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ base64Image: base64Image })
+      body: JSON.stringify({ imageUrl: imageUrl })
     })
       .then(response => response.json())
       .then(data => processFetchedData(data))
       .catch(error => {
-        console.error("Error fetching data from Google Apps Script:", error);
+        console.error("Error fetching data from Google Apps Script proxy:", error);
         document.getElementById('output').textContent = JSON.stringify({ error: error.toString() });
       });
   }
